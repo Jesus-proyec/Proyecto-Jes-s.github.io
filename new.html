@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrera de Autos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .race-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            position: relative;
+        }
+        .race-track {
+            background-color: #ddd;
+            border: 3px solid #555;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            height: 200px;
+        }
+        .car {
+            width: 60px;
+            height: 30px;
+            position: absolute;
+            margin: 10px 0;
+            transition: left 0.05s linear;
+            left: 0;
+            top: 50px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px black;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .car.selected {
+            border: 2px dashed black;
+            box-shadow: 0 0 10px yellow;
+        }
+        #car1 { background-color: red; top: 20px; }
+        #car2 { background-color: blue; top: 60px; }
+        #car3 { background-color: green; top: 100px; }
+        #car4 { background-color: yellow; color: black; text-shadow: 1px 1px 1px white; top: 140px; }
+        #car5 { background-color: purple; top: 180px; }
+        .controls {
+            margin: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: black;
+            border-left: 2px dashed white;
+            border-right: 2px dashed white;
+            z-index: 10;
+        }
+        .results {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .track-options {
+            margin: 15px 0;
+        }
+        select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .mile-markers {
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 15px;
+            margin: 0 20px;
+        }
+        .mile-marker {
+            flex: 1;
+            border-right: 1px solid rgba(0,0,0,0.3);
+            text-align: center;
+            font-size: 10px;
+            color: rgba(0,0,0,0.7);
+            background-color: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mile-marker:last-child {
+            border-right: none;
+        }
+        .track-name {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 5;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .results-table th, .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .results-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .position-1 { background-color: gold !important; font-weight: bold; }
+        .position-2 { background-color: silver !important; }
+        .position-3 { background-color: #cd7f32 !important; }
+        .car-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 5px;
+        }
+        .speed-chart {
+            margin: 20px auto;
+            max-width: 800px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .speed-chart h3 {
+            margin-top: 0;
+        }
+        .speed-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            margin: 5px 0;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <h1>Carrera de Autos</h1>
+    
+    <div class="controls">
+        <label for="car-select">Elige tu auto: </label>
+        <select id="car-select">
+            <option value="1">Auto de Tracción</option>
+            <option value="2">Auto Deportivo</option>
+            <option value="3">Auto de Ciudad</option>
+            <option value="4">Auto SUV</option>
+            <option value="5">Camión (Truck)</option>
+        </select>
+        
+        <div class="track-options">
+            <label for="track-select">Selecciona pista: </label>
+            <select id="track-select">
+                <option value="mountain">Montaña</option>
+                <option value="offroad">Terracería</option>
+                <option value="city">Ciudad</option>
+                <option value="highway">Autopista</option>
+                <option value="rainy">Lluvia</option>
+            </select>
+        </div>
+        
+        <button id="start-btn">Iniciar Carrera</button>
+        <button id="reset-btn" disabled>Reiniciar</button>
+        
+        <div class="car-info" id="car-info">
+            Velocidad base: 10km por 2 segundos. El terreno afectará el rendimiento de cada auto.
+        </div>
+    </div>
+    
+    <div class="speed-chart">
+        <h3>Rendimiento de autos en esta pista (segundos por 10km)</h3>
+        <div id="speed-bars"></div>
+    </div>
+    
+    <div class="race-container">
+        <div class="race-track" id="race-track">
+            <div class="track-name" id="track-name">Selecciona una pista</div>
+            <div class="finish-line"></div>
+            <div class="car" id="car1">1</div>
+            <div class="car" id="car2">2</div>
+            <div class="car" id="car3">3</div>
+            <div class="car" id="car4">4</div>
+            <div class="car" id="car5">5</div>
+            <div class="mile-markers">
+                <div class="mile-marker">0km</div>
+                <div class="mile-marker">10km</div>
+                <div class="mile-marker">20km</div>
+                <div class="mile-marker">30km</div>
+                <div class="mile-marker">40km</div>
+                <div class="mile-marker">50km</div>
+                <div class="mile-marker">60km</div>
+                <div class="mile-marker">70km</div>
+                <div class="mile-marker">80km</div>
+                <div class="mile-marker">90km</div>
+                <div class="mile-marker">100km</div>
+                <div class="mile-marker">110km</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="results" id="results"></div>
+    
+    <script>
+        // Configuración de velocidades por terreno (en segundos por 10km)
+        const terrainSpeeds = {
+            mountain: {
+                1: 2.0,   // Auto de Tracción
+                2: 10.0,  // Auto Deportivo
+                3: 8.0,   // Auto de Ciudad
+                4: 1.5,   // Auto SUV
+                5: 2.5    // Camión (Truck)
+            },
+            offroad: {
+                1: 2.0,   // Auto de Tracción
+                2: 7.0,   // Auto Deportivo
+                3: 5.0,   // Auto de Ciudad
+                4: 2.5,   // Auto SUV
+                5: 2.0    // Camión (Truck)
+            },
+            city: {
+                1: 3.5,   // Auto de Tracción
+                2: 1.5,   // Auto Deportivo
+                3: 1.5,   // Auto de Ciudad
+                4: 3.0,   // Auto SUV
+                5: 5.0    // Camión (Truck)
+            },
+            highway: {
+                1: 3.0,   // Auto de Tracción
+                2: 1.5,   // Auto Deportivo
+                3: 2.5,   // Auto de Ciudad
+                4: 2.0,   // Auto SUV
+                5: 3.0    // Camión (Truck)
+            },
+            rainy: {
+                1: 2.0,   // Auto de Tracción
+                2: 3.0,   // Auto Deportivo
+                3: 4.0,   // Auto de Ciudad
+                4: 3.0,   // Auto SUV
+                5: 3.5    // Camión (Truck)
+            }
+        };
+
+        const carNames = {
+            1: "Auto de Tracción",
+            2: "Auto Deportivo",
+            3: "Auto de Ciudad",
+            4: "Auto SUV",
+            5: "Camión (Truck)"
+        };
+
+        const carColors = {
+            1: "red",
+            2: "blue",
+            3: "green",
+            4: "yellow",
+            5: "purple"
+        };
+
+        const cars = [
+            { id: 1, element: document.getElementById('car1'), name: carNames[1], position: 0, finished: false, finishTime: 0 },
+            { id: 2, element: document.getElementById('car2'), name: carNames[2], position: 0, finished: false, finishTime: 0 },
+            { id: 3, element: document.getElementById('car3'), name: carNames[3], position: 0, finished: false, finishTime: 0 },
+            { id: 4, element: document.getElementById('car4'), name: carNames[4], position: 0, finished: false, finishTime: 0 },
+            { id: 5, element: document.getElementById('car5'), name: carNames[5], position: 0, finished: false, finishTime: 0 }
+        ];
+        
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const carSelect = document.getElementById('car-select');
+        const trackSelect = document.getElementById('track-select');
+        const resultsDiv = document.getElementById('results');
+        const raceTrack = document.getElementById('race-track');
+        const trackNameElement = document.getElementById('track-name');
+        const carInfoElement = document.getElementById('car-info');
+        const speedBarsContainer = document.getElementById('speed-bars');
+        const trackImages = {
+            mountain: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            offroad: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            city: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            highway: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            rainy: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+        };
+        
+        const trackWidth = raceTrack.clientWidth - 80; // Ancho disponible para la carrera
+        const totalDistance = 120; // 120 km (12 segmentos de 10km)
+        let raceInterval;
+        let raceFinished = false;
+        let selectedCarId = 1;
+        let currentTrack = 'mountain';
+        let positions = [];
+        let raceStartTime;
+        
+        // Seleccionar auto
+        carSelect.addEventListener('change', function() {
+            selectedCarId = parseInt(this.value);
+            updateSelectedCar();
+            updateCarInfo();
+            updateSpeedChart();
+        });
+        
+        // Seleccionar pista
+        trackSelect.addEventListener('change', function() {
+            currentTrack = this.value;
+            updateTrackBackground();
+            updateCarInfo();
+            updateSpeedChart();
+        });
+        
+        function updateTrackBackground() {
+            const trackName = getTrackName(currentTrack);
+            trackNameElement.textContent = trackName;
+            
+            if (currentTrack) {
+                raceTrack.style.backgroundImage = `url(${trackImages[currentTrack]})`;
+                raceTrack.style.backgroundColor = 'rgba(221, 221, 221, 0.7)';
+                raceTrack.style.backgroundBlendMode = 'overlay';
+            } else {
+                raceTrack.style.backgroundImage = 'none';
+                raceTrack.style.backgroundColor = '#ddd';
+            }
+        }
+        
+        function updateSelectedCar() {
+            // Quitar selección de todos los autos
+            cars.forEach(car => {
+                car.element.classList.remove('selected');
+            });
+            
+            // Seleccionar el auto elegido
+            const selectedCar = cars.find(car => car.id === selectedCarId);
+            if (selectedCar) {
+                selectedCar.element.classList.add('selected');
+            }
+        }
+        
+        function updateCarInfo() {
+            const selectedCar = cars.find(car => car.id === selectedCarId);
+            const speed = terrainSpeeds[currentTrack][selectedCarId];
+            const baseSpeed = 2.0;
+            
+            let performanceText;
+            if (speed < baseSpeed) {
+                performanceText = `🚀 <strong>Mejor rendimiento</strong> que la velocidad base (${baseSpeed}s)`;
+            } else if (speed > baseSpeed) {
+                performanceText = `🐢 <strong>Peor rendimiento</strong> que la velocidad base (${baseSpeed}s)`;
+            } else {
+                performanceText = `⚡ <strong>Rendimiento normal</strong> (igual a la velocidad base)`;
+            }
+            
+            carInfoElement.innerHTML = `
+                <strong>${selectedCar.name}</strong> en pista <strong>${getTrackName(currentTrack)}</strong>: 
+                Velocidad: 10km por <strong>${speed} segundos</strong>.
+                ${performanceText}
+            `;
+        }
+        
+        function updateSpeedChart() {
+            const maxSpeed = Math.max(...Object.values(terrainSpeeds[currentTrack]));
+            speedBarsContainer.innerHTML = '';
+            
+            for (let i = 1; i <= 5; i++) {
+                const speed = terrainSpeeds[currentTrack][i];
+                const percentage = (1 - (speed / (maxSpeed * 1.1))) * 100;
+                
+                const barContainer = document.createElement('div');
+                barContainer.style.display = 'flex';
+                barContainer.style.alignItems = 'center';
+                barContainer.style.margin = '10px 0';
+                
+                const carLabel = document.createElement('div');
+                carLabel.textContent = `${carNames[i]}:`;
+                carLabel.style.width = '150px';
+                carLabel.style.textAlign = 'right';
+                carLabel.style.paddingRight = '10px';
+                carLabel.style.fontWeight = i === selectedCarId ? 'bold' : 'normal';
+                carLabel.style.color = carColors[i];
+                
+                const bar = document.createElement('div');
+                bar.className = 'speed-bar';
+                bar.style.width = `${percentage}%`;
+                bar.style.backgroundColor = carColors[i];
+                bar.style.height = '20px';
+                bar.style.margin = '0 5px';
+                
+                const speedLabel = document.createElement('div');
+                speedLabel.textContent = `${speed}s`;
+                speedLabel.style.width = '50px';
+                speedLabel.style.textAlign = 'left';
+                
+                barContainer.appendChild(carLabel);
+                barContainer.appendChild(bar);
+                barContainer.appendChild(speedLabel);
+                speedBarsContainer.appendChild(barContainer);
+            }
+        }
+        
+        // Iniciar carrera
+        startBtn.addEventListener('click', startRace);
+        
+        function startRace() {
+            if (raceInterval) return;
+            
+            // Reiniciar estado
+            cars.forEach(car => {
+                car.position = 0;
+                car.finished = false;
+                car.finishTime = 0;
+                car.element.style.left = '0px';
+            });
+            raceFinished = false;
+            positions = [];
+            resultsDiv.textContent = '';
+            
+            startBtn.disabled = true;
+            resetBtn.disabled = false;
+            carSelect.disabled = true;
+            trackSelect.disabled = true;
+            
+            updateSelectedCar();
+            updateTrackBackground();
+            
+            // Iniciar animación
+            raceStartTime = Date.now();
+            raceInterval = setInterval(moveCars, 16); // ~60fps
+        }
+        
+        function moveCars() {
+            if (raceFinished) return;
+            
+            const currentTime = Date.now();
+            const elapsed = (currentTime - raceStartTime) / 1000; // en segundos
+            
+            let carsFinished = 0;
+            
+            cars.forEach(car => {
+                if (!car.finished) {
+                    // Obtener la velocidad para este auto en el terreno actual
+                    const speedPer10Km = terrainSpeeds[currentTrack][car.id];
+                    const kmPerSecond = 10 / speedPer10Km;
+                    const distanceTraveled = kmPerSecond * elapsed;
+                    
+                    // Calcular posición (cada 10km es un segmento)
+                    const progress = Math.min(distanceTraveled / totalDistance, 1);
+                    car.position = progress * trackWidth;
+                    car.element.style.left = car.position + 'px';
+                    
+                    // Verificar si llegó a la meta
+                    if (progress >= 1) {
+                        car.finished = true;
+                        car.finishTime = elapsed;
+                        carsFinished++;
+                        
+                        // Registrar posición
+                        if (!positions.includes(car.id)) {
+                            positions.push(car.id);
+                        }
+                    }
+                } else {
+                    carsFinished++;
+                }
+            });
+            
+            // Verificar si todos terminaron
+            if (carsFinished === cars.length) {
+                finishRace();
+            }
+        }
+        
+        function finishRace() {
+            clearInterval(raceInterval);
+            raceFinished = true;
+            
+            // Calcular tiempos finales para todos los autos
+            const finishedCars = cars.map(car => ({
+                id: car.id,
+                name: car.name,
+                finishTime: car.finished ? car.finishTime : Number.MAX_VALUE,
+                position: positions.indexOf(car.id) + 1
+            }));
+            
+            // Ordenar por tiempo de llegada
+            finishedCars.sort((a, b) => a.finishTime - b.finishTime);
+            
+            // Mostrar resultados
+            let resultText = `Resultados en pista ${getTrackName(currentTrack)}:`;
+            
+            // Crear tabla de resultados
+            let tableHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Auto</th>
+                            <th>Tiempo (segundos)</th>
+                            <th>Velocidad promedio</th>
+                            <th>Rendimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            finishedCars.forEach((car, index) => {
+                const timeInSeconds = car.finishTime.toFixed(2);
+                const avgSpeed = (totalDistance / car.finishTime).toFixed(2);
+                const performance = getPerformanceEmoji(car.finishTime, index + 1);
+                
+                tableHTML += `
+                    <tr class="position-${index + 1}">
+                        <td>${index + 1}°</td>
+                        <td>${car.name}</td>
+                        <td>${timeInSeconds}</td>
+                        <td>${avgSpeed} km/s</td>
+                        <td>${performance}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `</tbody></table>`;
+            
+            // Verificar si ganó el auto seleccionado
+            const selectedCarResult = finishedCars.find(c => c.id === selectedCarId);
+            
+            if (selectedCarResult) {
+                const position = finishedCars.indexOf(selectedCarResult) + 1;
+                const selectedCar = cars.find(c => c.id === selectedCarId);
+                
+                if (position === 1) {
+                    resultText += ` ¡Felicidades! Tu ${selectedCar.name} ganó la carrera!`;
+                } else {
+                    resultText += ` Tu ${selectedCar.name} quedó en ${position}° lugar.`;
+                }
+            }
+            
+            resultsDiv.innerHTML = `<div>${resultText}</div>${tableHTML}`;
+        }
+        
+        function getPerformanceEmoji(time, position) {
+            if (position === 1) return '🏆 Excelente';
+            if (position <= 3) return '👍 Bueno';
+            return '👎 Regular';
+        }
+        
+        function getTrackName(trackKey) {
+            const trackNames = {
+                mountain: 'Montaña',
+                offroad: 'Terracería',
+                city: 'Ciudad',
+                highway: 'Autopista',
+                rainy: 'Lluvia'
+            };
+            return trackNames[trackKey] || trackKey;
+        }
+        
+        // Reiniciar carrera
+        resetBtn.addEventListener('click', resetRace);
+        
+        function resetRace() {
+            clearInterval(raceInterval);
+            raceInterval = null;
+            
+            cars.forEach(car => {
+                car.position = 0;
+                car.finished = false;
+                car.finishTime = 0;
+                car.element.style.left = '0px';
+            });
+            
+            startBtn.disabled = false;
+            resetBtn.disabled = true;
+            carSelect.disabled = false;
+            trackSelect.disabled = false;
+            resultsDiv.textContent = '';
+            
+            updateSelectedCar();
+            updateCarInfo();
+        }
+        
+        // Inicializar
+        updateSelectedCar();
+        updateTrackBackground();
+        updateCarInfo();
+        updateSpeedChart();
+    </script>
+</body>
+</html>
